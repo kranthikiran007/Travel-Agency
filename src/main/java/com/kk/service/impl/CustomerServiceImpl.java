@@ -120,25 +120,36 @@ public class CustomerServiceImpl implements CustomerService {
 	@Override
 	public List<CustomerDto> getByTour(String packageName) {
 		List<Tour> packages = tourRepository.findByPackageName(packageName);
-		List<Customer> customers = customerRepository.findByTourDetails(packages.getFirst());
-		List<CustomerDto> customerDtos = new ArrayList<CustomerDto>();
-		for (Customer customer : customers) {
-			AddressDto permanentAddressDto = new AddressDto(customer.getPermenantAdd().getId(),
-					customer.getPermenantAdd().getHouseNo(), customer.getPermenantAdd().getStreet(),
-					customer.getPermenantAdd().getLandMark(), customer.getPermenantAdd().getCity(),
-					customer.getPermenantAdd().getState(), customer.getPermenantAdd().getPinCode());
-			AddressDto communicationAddressDto = new AddressDto(customer.getCommunicationAdd().getId(),
-					customer.getCommunicationAdd().getHouseNo(), customer.getCommunicationAdd().getStreet(),
-					customer.getCommunicationAdd().getStreet(), customer.getCommunicationAdd().getCity(),
-					customer.getCommunicationAdd().getState(), customer.getCommunicationAdd().getPinCode());
-			TourDto tourDto = new TourDto(customer.getTourDetails().getId(), customer.getTourDetails().getStartLoc(),
-					customer.getTourDetails().getCost(), customer.getTourDetails().getDestinationLoc(),
-					customer.getTourDetails().getLocationsCovered(), customer.getTourDetails().getPackageName());
-			CustomerDto customerDto = new CustomerDto(customer.getId(), customer.getFirstName(), customer.getLastName(),
-					customer.getPhone(), customer.getNotes(), permanentAddressDto, communicationAddressDto, tourDto);
-			customerDtos.add(customerDto);
+		if (packages.size()!=0) {
+			List<Customer> customers = customerRepository.findByTourDetails(packages.getFirst());
+			if (customers.size()!=0) {
+				List<CustomerDto> customerDtos = new ArrayList<CustomerDto>();
+				for (Customer customer : customers) {
+					AddressDto permanentAddressDto = new AddressDto(customer.getPermenantAdd().getId(),
+							customer.getPermenantAdd().getHouseNo(), customer.getPermenantAdd().getStreet(),
+							customer.getPermenantAdd().getLandMark(), customer.getPermenantAdd().getCity(),
+							customer.getPermenantAdd().getState(), customer.getPermenantAdd().getPinCode());
+					AddressDto communicationAddressDto = new AddressDto(customer.getCommunicationAdd().getId(),
+							customer.getCommunicationAdd().getHouseNo(), customer.getCommunicationAdd().getStreet(),
+							customer.getCommunicationAdd().getStreet(), customer.getCommunicationAdd().getCity(),
+							customer.getCommunicationAdd().getState(), customer.getCommunicationAdd().getPinCode());
+					TourDto tourDto = new TourDto(customer.getTourDetails().getId(),
+							customer.getTourDetails().getStartLoc(), customer.getTourDetails().getCost(),
+							customer.getTourDetails().getDestinationLoc(),
+							customer.getTourDetails().getLocationsCovered(),
+							customer.getTourDetails().getPackageName());
+					CustomerDto customerDto = new CustomerDto(customer.getId(), customer.getFirstName(),
+							customer.getLastName(), customer.getPhone(), customer.getNotes(), permanentAddressDto,
+							communicationAddressDto, tourDto);
+					customerDtos.add(customerDto);
+				}
+				return customerDtos;
+			} else {
+				throw new CustomerNotFoundException("No customer is registered with the package name "+packageName);
+			}
+		} else {
+			throw new TourNotFoundException("Tour with name " + packageName + " does not exist");
 		}
-		return customerDtos;
 	}
 
 	@Override
@@ -155,10 +166,16 @@ public class CustomerServiceImpl implements CustomerService {
 
 	@Override
 	public TourDto getTourByName(String name) {
-		Tour tour = tourRepository.findByPackageName(name).get(0);
+		List<Tour> tours = tourRepository.findByPackageName(name);
+		if(tours.size()!=0)
+		{	
+		Tour tour = tours.getFirst();
 		TourDto dto = new TourDto(tour.getId(), tour.getStartLoc(), tour.getCost(), tour.getDestinationLoc(),
 				tour.getLocationsCovered(), tour.getPackageName());
-		return dto;
+		return dto;}
+		 else {
+				throw new TourNotFoundException("Tour with name " + name + " does not exist");
+			}
 	}
 
 	@Override
@@ -173,11 +190,12 @@ public class CustomerServiceImpl implements CustomerService {
 				customerDto.getCommunicationAdd().getPinCode());
 		Tour addedTour = new Tour(0, customerDto.getTour().getStartLoc(), customerDto.getTour().getCost(),
 				customerDto.getTour().getDestinationLoc(), customerDto.getTour().getLocationsCovered(),
-	   			customerDto.getTour().getPackageName());
+				customerDto.getTour().getPackageName());
 		if (tourRepository.existsByPackageName(customerDto.getTour().getPackageName())) {
 			addedTour = tourRepository.findByPackageName(customerDto.getTour().getPackageName()).get(0);
 		}
 		tourRepository.save(addedTour);
+		System.out.println(addedTour);
 		Customer addedCustomer = new Customer(0, customerDto.getFirstName(), customerDto.getLastName(),
 				customerDto.getPhone(), customerDto.getNotes(), permanentAddress, communicationAddress, addedTour);
 		Customer customer = customerRepository.save(addedCustomer);
@@ -237,27 +255,36 @@ public class CustomerServiceImpl implements CustomerService {
 	public CustomerDto updateCustomer(int id, CustomerDto customerDto) {
 		Customer customer = customerRepository.findById(id)
 				.orElseThrow(() -> new CustomerNotFoundException("Customer with id" + id + " is not found"));
-		Address updatedPermanentAddress = updateAddress(customerDto.getPermenantAdd(), customer.getPermenantAdd());
-		Address updatedCommunicationAddress = updateAddress(customerDto.getCommunicationAdd(),
-				customer.getCommunicationAdd());
+
+		if (customerDto.getPermenantAdd() != null) {
+			Address updatedPermanentAddress = updateAddress(customerDto.getPermenantAdd(), customer.getPermenantAdd());
+			customer.setPermenantAdd(updatedPermanentAddress);
+		}
+		if (customerDto.getCommunicationAdd() != null) {
+			Address updatedCommunicationAddress = updateAddress(customerDto.getCommunicationAdd(),
+					customer.getCommunicationAdd());
+			customer.setCommunicationAdd(updatedCommunicationAddress);
+		}
 
 		TourDto tourDto = customerDto.getTour();
 		Tour tour = customer.getTourDetails();
-
-		if (tourDto.getStartLoc() != null) {
-			tour.setStartLoc(tourDto.getStartLoc());
-		}
-		if (tourDto.getDestinationLoc() != null) {
-			tour.setDestinationLoc(tourDto.getDestinationLoc());
-		}
-		if (tourDto.getCost() != 0) {
-			tour.setCost(tourDto.getCost());
-		}
-		if (tourDto.getPackageName() != null) {
-			tour.setPackageName(tourDto.getPackageName());
-		}
-		if (tourDto.getLocationsCovered() != null) {
-			tour.setLocationsCovered(tourDto.getLocationsCovered());
+		if (tourDto != null) {
+			if (tourDto.getStartLoc() != null) {
+				tour.setStartLoc(tourDto.getStartLoc());
+			}
+			if (tourDto.getDestinationLoc() != null) {
+				tour.setDestinationLoc(tourDto.getDestinationLoc());
+			}
+			if (tourDto.getCost() != 0) {
+				tour.setCost(tourDto.getCost());
+			}
+			if (tourDto.getPackageName() != null) {
+				tour.setPackageName(tourDto.getPackageName());
+			}
+			if (tourDto.getLocationsCovered() != null) {
+				tour.setLocationsCovered(tourDto.getLocationsCovered());
+			}
+			customer.setTourDetails(tour);
 		}
 
 		if (customerDto.getFirstName() != null) {
@@ -272,9 +299,6 @@ public class CustomerServiceImpl implements CustomerService {
 		if (customerDto.getNotes() != null) {
 			customer.setNotes(customerDto.getNotes());
 		}
-		customer.setPermenantAdd(updatedPermanentAddress);
-		customer.setCommunicationAdd(updatedCommunicationAddress);
-		customer.setTourDetails(tour);
 		Customer updatedCustomer = customerRepository.save(customer);
 
 		AddressDto permantentAddDto = new AddressDto(updatedCustomer.getPermenantAdd().getId(),

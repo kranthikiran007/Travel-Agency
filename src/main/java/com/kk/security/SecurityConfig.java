@@ -3,6 +3,7 @@ package com.kk.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -22,32 +23,27 @@ public class SecurityConfig {
 	private JWTAccessDeniedHandler accessDeniedHandler;
 	@Autowired
 	private JWTAuthenticationFilter authenticationFilter;
+
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity h) throws Exception {
 		h.csrf(config -> config.disable());
 //		h.csrf(AbstractHttpConfigurer::disable);
-		h.authorizeHttpRequests(auth -> auth.requestMatchers("/api/travel-agency/auth/**").permitAll()
+		h.authorizeHttpRequests(auth -> auth
+				.requestMatchers("/api/travel-agency/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
 				.anyRequest().authenticated())
-				.exceptionHandling(ex->ex.accessDeniedHandler(accessDeniedHandler)
-				.authenticationEntryPoint(authEntryPoint))
+				.exceptionHandling(
+						ex -> ex.accessDeniedHandler(accessDeniedHandler))
+				.exceptionHandling(ex->ex.authenticationEntryPoint(authEntryPoint))
 				.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
 		return h.build();
 	}
 
-//	@Bean
-//	UserDetailsService userDetailsService()
-//	{
-//		UserDetails kk = User.builder().username("kranthi").password(passwordEncoder().encode("itskk")).roles("ADMIN").build();
-//		UserDetails km = User.withUsername("kiran").password(passwordEncoder().encode("itsgg")).roles("USER").build();
-//		return new  InMemoryUserDetailsManager(kk,km);
-//	}
 	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration authconfig) throws Exception
-	{
+	AuthenticationManager authenticationManager(AuthenticationConfiguration authconfig) throws Exception {
 		return authconfig.getAuthenticationManager();
-	
 	}
+
 	@Bean
 	PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();

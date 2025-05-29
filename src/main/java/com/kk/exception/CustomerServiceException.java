@@ -11,4 +11,5 @@ import lombok.NoArgsConstructor;
 public class CustomerServiceException extends RuntimeException {
 	private HttpStatus httpStatus;
 	private String msg;
+	
 	}

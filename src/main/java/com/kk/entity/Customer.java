@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -29,10 +30,10 @@ public class Customer {
 	private String phone;
 	private String notes;
 	@OneToOne(cascade = CascadeType.ALL)
-	private  Address permenantAdd;
+	private Address permenantAdd;
 	@OneToOne(cascade = CascadeType.ALL)
 	private Address communicationAdd;
 	@ManyToOne
-	@JoinColumn(name="tour_id")
+	@JoinColumn(name = "tour_id")
 	private Tour tourDetails;
 }

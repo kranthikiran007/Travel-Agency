@@ -12,18 +12,21 @@ import com.kk.dtos.AuthResponse;
 import com.kk.dtos.LoginDto;
 import com.kk.service.AuthService;
 
+// This controller handles authentication-related endpoints for the Travel Agency System.
 @RestController
 @RequestMapping("/api/travel-agency/auth")
 public class AuthController {
 	@Autowired
 	private AuthService authService;
+
+	// This endpoint allows users to log in by providing their credentials.
 	@PostMapping("/login")
 	public ResponseEntity<AuthResponse> login(@RequestBody LoginDto loginDto)
 	{
-		System.out.println("controller");
 		var r = authService.login(loginDto);
 		AuthResponse response = new AuthResponse();
 		response.setJwtToken(r);
+		response.setType("Bearer");
 		return ResponseEntity.ok(response);
 	}
 }
